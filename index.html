@@ -233,7 +233,7 @@ p{margin:0}
 'use strict';
 
 /* ===== PENGATURAN: isi dengan alamat Worker kamu (lihat README) ===== */
-const API_URL = 'https://say-it-right-proxy.solus14u.workers.dev';
+const API_URL = 'https://say-it-right-proxy.solus14u.workers.dev/';
 /* ===================================================================== */
 const $ = id => document.getElementById(id);
 function el(tag, cls, txt){ const e = document.createElement(tag); if(cls) e.className = cls; if(txt != null) e.textContent = txt; return e; }
@@ -451,6 +451,7 @@ function errorText(e){
   if(c === 'not_configured') return 'Server tutor belum diberi kunci API Groq. Lihat README bagian GROQ_API_KEY.';
   if(c === 'invalid_json' || c === 'empty') return 'Jawaban tutor tidak terbaca. Kirim ulang pesanmu.';
   if(c === 'bad_request') return 'Pesan tidak bisa diproses. Coba kalimat yang lebih pendek.';
+  if(c === 'upstream_error' && e.detail) return 'Groq menolak permintaan (kode ' + (e.status || '?') + '): ' + e.detail;
   return 'Koneksi ke tutor terputus. Coba kirim lagi.';
 }
 async function ask(um){
@@ -467,7 +468,7 @@ async function ask(um){
       });
       try { j = await res.json(); } catch(e2){ j = null; }
     } finally { clearTimeout(timer); }
-    if(!res.ok) throw {code: (j && j.error) || 'upstream_error'};
+    if(!res.ok) throw {code: (j && j.error) || 'upstream_error', status: j && j.status, detail: j && j.detail};
     const data = j && j.data;
     if(!data || typeof data !== 'object' || !String(data.reply || '').trim()) throw {code: 'invalid_json'};
     const reply = String(data.reply).trim().slice(0, 900);
